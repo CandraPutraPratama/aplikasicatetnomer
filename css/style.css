@@ -261,10 +261,42 @@ body {
   gap: 0.75rem;
 }
 
+.search-and-sort-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .search-box {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.sort-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sort-select {
+  height: 44px;
+  padding: 0 1rem;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.sort-select:focus {
+  border-color: var(--border-focus);
 }
 
 .search-icon {
@@ -947,6 +979,22 @@ body {
 }
 .toast.toast-danger {
   border-color: #ef4444;
+}
+
+.toast-action-btn {
+  margin-left: auto;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.toast-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 @keyframes toastIn {

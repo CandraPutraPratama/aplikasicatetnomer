@@ -21,7 +21,11 @@ class App {
    * Refresh current view and statistics.
    */
   refresh() {
-    const filteredItems = this.store.getFiltered(this.ui.searchQuery, this.ui.currentFilter);
+    const filteredItems = this.store.getFiltered(
+      this.ui.searchQuery,
+      this.ui.currentFilter,
+      this.ui.currentSort
+    );
     const totalCount = this.store.getAll().length;
     const stats = this.store.getStats();
 
@@ -35,7 +39,7 @@ class App {
   bindEvents() {
     const { elements } = this.ui;
 
-    // --- 1. Search Interactions ---
+    // --- 1. Search & Sort Interactions ---
     elements.searchInput.addEventListener('input', (e) => {
       this.ui.searchQuery = e.target.value;
       if (this.ui.searchQuery.trim().length > 0) {
@@ -54,6 +58,14 @@ class App {
       this.refresh();
     });
 
+    if (elements.sortSelect) {
+      elements.sortSelect.addEventListener('change', (e) => {
+        this.ui.currentSort = e.target.value;
+        this.ui.vibrate(20);
+        this.refresh();
+      });
+    }
+
     // --- 2. Filter Pills ---
     elements.filterPills.forEach(pill => {
       pill.addEventListener('click', () => {
@@ -64,6 +76,7 @@ class App {
         pill.classList.add('active');
         pill.setAttribute('aria-selected', 'true');
         this.ui.currentFilter = pill.dataset.filter;
+        this.ui.vibrate(20);
         this.refresh();
       });
     });
@@ -74,6 +87,7 @@ class App {
       const copyBtn = e.target.closest('[data-copy-phone]');
       if (copyBtn) {
         const phone = copyBtn.dataset.copyPhone;
+        this.ui.vibrate(25);
         this.copyToClipboard(phone, `Nomor ${phone} disalin`);
         return;
       }
@@ -83,6 +97,7 @@ class App {
       if (voucherBtn) {
         const id = voucherBtn.dataset.id;
         const vIndex = parseInt(voucherBtn.dataset.v, 10);
+        this.ui.vibrate(35);
         this.store.toggleVoucher(id, vIndex);
         this.refresh();
         return;
@@ -94,6 +109,7 @@ class App {
         const id = singleDeleteBtn.dataset.id;
         const item = this.store.getItem(id);
         if (item) {
+          this.ui.vibrate(25);
           this.ui.pendingDeleteIds = [id];
           elements.deleteModalMessage.textContent = `Hapus nomor ${item.phone} dari daftar?`;
           this.ui.openModal(elements.deleteModal);
@@ -108,6 +124,7 @@ class App {
       if (checkbox) {
         const id = checkbox.dataset.selectId;
         const card = checkbox.closest('.phone-card');
+        this.ui.vibrate(20);
         if (checkbox.checked) {
           this.ui.selectedIds.add(id);
           card.classList.add('selected');
@@ -115,7 +132,11 @@ class App {
           this.ui.selectedIds.delete(id);
           card.classList.remove('selected');
         }
-        const filteredItems = this.store.getFiltered(this.ui.searchQuery, this.ui.currentFilter);
+        const filteredItems = this.store.getFiltered(
+          this.ui.searchQuery,
+          this.ui.currentFilter,
+          this.ui.currentSort
+        );
         this.ui.updateSelectAllCheckbox(filteredItems);
         this.ui.updateBulkActionBar();
       }
@@ -124,7 +145,12 @@ class App {
     // --- 4. Master Select All Checkbox ---
     elements.selectAllCheckbox.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
-      const visibleItems = this.store.getFiltered(this.ui.searchQuery, this.ui.currentFilter);
+      this.ui.vibrate(25);
+      const visibleItems = this.store.getFiltered(
+        this.ui.searchQuery,
+        this.ui.currentFilter,
+        this.ui.currentSort
+      );
 
       if (isChecked) {
         for (const item of visibleItems) {
@@ -141,15 +167,33 @@ class App {
 
     // Cancel selection button
     elements.btnCancelSelection.addEventListener('click', () => {
+      this.ui.vibrate(20);
       this.ui.selectedIds.clear();
       this.refresh();
     });
 
     // --- 5. Bulk Actions ---
+    // Bulk Copy numbers to clipboard
+    if (elements.btnBulkCopy) {
+      elements.btnBulkCopy.addEventListener('click', () => {
+        const count = this.ui.selectedIds.size;
+        if (count === 0) return;
+        const phoneList = [];
+        for (const id of this.ui.selectedIds) {
+          const item = this.store.getItem(id);
+          if (item) phoneList.push(item.phone);
+        }
+        const textToCopy = phoneList.join('\r\n');
+        this.ui.vibrate(30);
+        this.copyToClipboard(textToCopy, `${count} nomor disalin ke clipboard!`);
+      });
+    }
+
     // Bulk Mark V1
     elements.btnBulkMarkV1.addEventListener('click', () => {
       const count = this.ui.selectedIds.size;
       if (count === 0) return;
+      this.ui.vibrate(30);
       this.store.setVouchersForIds(Array.from(this.ui.selectedIds), 1, true);
       this.ui.showToast(`Voucher 1 ditandai X untuk ${count} nomor`, 'success');
       this.refresh();
@@ -159,6 +203,7 @@ class App {
     elements.btnBulkMarkV2.addEventListener('click', () => {
       const count = this.ui.selectedIds.size;
       if (count === 0) return;
+      this.ui.vibrate(30);
       this.store.setVouchersForIds(Array.from(this.ui.selectedIds), 2, true);
       this.ui.showToast(`Voucher 2 ditandai X untuk ${count} nomor`, 'success');
       this.refresh();
@@ -185,12 +230,21 @@ class App {
       this.ui.openModal(elements.resetModal);
     });
 
-    // Confirm Reset Action in Modal
+    // Confirm Reset Action in Modal with Undo Option
     elements.btnConfirmReset.addEventListener('click', () => {
       const ids = this.ui.pendingResetIds;
       const count = this.store.resetVouchers(ids);
+      this.ui.vibrate(40);
       this.ui.closeModal(elements.resetModal);
-      this.ui.showToast(`Tanda voucher direset pada ${count} nomor`, 'success');
+      this.ui.showToast(`Tanda voucher direset pada ${count} nomor`, 'success', 5000, {
+        label: 'Urungkan (Undo)',
+        callback: () => {
+          this.store.undo();
+          this.ui.vibrate(30);
+          this.ui.showToast('Reset voucher dibatalkan', 'success');
+          this.refresh();
+        }
+      });
       this.refresh();
     });
 
@@ -203,15 +257,24 @@ class App {
       this.ui.openModal(elements.deleteModal);
     });
 
-    // Confirm Delete Action in Modal
+    // Confirm Delete Action in Modal with Undo Option
     elements.btnConfirmDelete.addEventListener('click', () => {
       const ids = this.ui.pendingDeleteIds;
       const deleted = this.store.deleteNumbers(ids);
       for (const id of ids) {
         this.ui.selectedIds.delete(id);
       }
+      this.ui.vibrate(40);
       this.ui.closeModal(elements.deleteModal);
-      this.ui.showToast(`${deleted} nomor berhasil dihapus`, 'danger');
+      this.ui.showToast(`${deleted} nomor berhasil dihapus`, 'danger', 5000, {
+        label: 'Urungkan (Undo)',
+        callback: () => {
+          this.store.undo();
+          this.ui.vibrate(30);
+          this.ui.showToast('Penghapusan nomor dibatalkan', 'success');
+          this.refresh();
+        }
+      });
       this.refresh();
     });
 

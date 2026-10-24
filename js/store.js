@@ -13,7 +13,30 @@ export class PhoneStore {
       this.storage = null;
     }
     this.items = [];
+    this.undoStack = [];
     this.load();
+  }
+
+  /**
+   * Save a snapshot to undo stack before destructive actions.
+   */
+  pushUndoSnapshot() {
+    // Keep at most 10 undo steps
+    if (this.undoStack.length >= 10) {
+      this.undoStack.shift();
+    }
+    this.undoStack.push(JSON.parse(JSON.stringify(this.items)));
+  }
+
+  /**
+   * Restore previous state from undo stack.
+   */
+  undo() {
+    if (this.undoStack.length === 0) return false;
+    const snapshot = this.undoStack.pop();
+    this.items = snapshot;
+    this.save();
+    return true;
   }
 
   /**
@@ -209,6 +232,7 @@ export class PhoneStore {
    */
   deleteNumbers(ids) {
     if (!Array.isArray(ids) || ids.length === 0) return 0;
+    this.pushUndoSnapshot();
     const idSet = new Set(ids);
     const initialLen = this.items.length;
     this.items = this.items.filter(item => !idSet.has(item.id));
@@ -224,6 +248,7 @@ export class PhoneStore {
    * Clear all numbers.
    */
   clearAll() {
+    this.pushUndoSnapshot();
     const count = this.items.length;
     this.items = [];
     this.save();
@@ -236,6 +261,7 @@ export class PhoneStore {
    * If ids is not provided or null, reset ALL items.
    */
   resetVouchers(ids = null) {
+    this.pushUndoSnapshot();
     let affectedCount = 0;
     const now = Date.now();
 
@@ -269,14 +295,15 @@ export class PhoneStore {
   }
 
   /**
-   * Filter and search numbers.
+   * Filter, search, and sort numbers.
    * @param {string} searchQuery - Search substring
    * @param {'all' | 'none' | 'one' | 'both'} filterStatus - Voucher status filter
+   * @param {'newest' | 'oldest' | 'phone' | 'available-desc' | 'used-desc'} sortBy - Sort order
    */
-  getFiltered(searchQuery = '', filterStatus = 'all') {
+  getFiltered(searchQuery = '', filterStatus = 'all', sortBy = 'newest') {
     const query = searchQuery ? searchQuery.trim().toLowerCase() : '';
 
-    return this.items.filter(item => {
+    const filtered = this.items.filter(item => {
       // 1. Search query match
       if (query && !item.phone.toLowerCase().includes(query)) {
         return false;
@@ -299,6 +326,33 @@ export class PhoneStore {
       // 'all'
       return true;
     });
+
+    // 3. Sorting
+    filtered.sort((a, b) => {
+      if (sortBy === 'oldest') {
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      }
+      if (sortBy === 'phone') {
+        return a.phone.localeCompare(b.phone);
+      }
+      if (sortBy === 'available-desc') {
+        // Available vouchers count: 2 - (used)
+        const availA = (a.v1 ? 0 : 1) + (a.v2 ? 0 : 1);
+        const availB = (b.v1 ? 0 : 1) + (b.v2 ? 0 : 1);
+        if (availB !== availA) return availB - availA;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      }
+      if (sortBy === 'used-desc') {
+        const usedA = (a.v1 ? 1 : 0) + (a.v2 ? 1 : 0);
+        const usedB = (b.v1 ? 1 : 0) + (b.v2 ? 1 : 0);
+        if (usedB !== usedA) return usedB - usedA;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      }
+      // 'newest' default: newest added first
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+
+    return filtered;
   }
 
   /**

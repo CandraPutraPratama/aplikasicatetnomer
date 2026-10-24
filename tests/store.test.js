@@ -184,6 +184,45 @@ describe('PhoneStore - Core Data Layer', () => {
       assert.equal(res.length, 1);
       assert.equal(res[0].phone, '081200000002');
     });
+
+    it('sorts by phone ascending and status available-desc', () => {
+      const sortedByPhone = store.getFiltered('', 'all', 'phone');
+      assert.equal(sortedByPhone[0].phone, '081200000001');
+      assert.equal(sortedByPhone[3].phone, '081400000004');
+
+      const sortedByAvailable = store.getFiltered('', 'all', 'available-desc');
+      // item 0 has 2 available (none used) -> should be first
+      assert.equal(sortedByAvailable[0].phone, '081200000001');
+      // item 3 has 0 available (both used) -> should be last
+      assert.equal(sortedByAvailable[3].phone, '081400000004');
+    });
+  });
+
+  describe('undo functionality', () => {
+    it('restores deleted items on undo', () => {
+      store.addNumbers('081111111111\n082222222222');
+      const items = store.getAll();
+      store.deleteNumbers([items[0].id]);
+      assert.equal(store.getAll().length, 1);
+
+      const undoSuccess = store.undo();
+      assert.equal(undoSuccess, true);
+      assert.equal(store.getAll().length, 2);
+    });
+
+    it('restores voucher status after reset vouchers on undo', () => {
+      store.addNumbers('081111111111');
+      const item = store.getAll()[0];
+      store.toggleVoucher(item.id, 1);
+      store.toggleVoucher(item.id, 2);
+
+      store.resetVouchers();
+      assert.equal(store.getItem(item.id).v1, false);
+
+      store.undo();
+      assert.equal(store.getItem(item.id).v1, true);
+      assert.equal(store.getItem(item.id).v2, true);
+    });
   });
 
   describe('statistics calculation', () => {

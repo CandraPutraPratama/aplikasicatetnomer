@@ -109,18 +109,29 @@
 
       <!-- Search & Filters Bar -->
       <section class="controls-card">
-        <div class="search-box">
-          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input type="text" id="searchInput" class="search-input" placeholder="Cari nomor telepon..." autocomplete="off">
-          <button id="btnClearSearch" class="btn-clear-search hidden" aria-label="Hapus pencarian">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+        <div class="search-and-sort-row">
+          <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-          </button>
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari nomor telepon..." autocomplete="off">
+            <button id="btnClearSearch" class="btn-clear-search hidden" aria-label="Hapus pencarian">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="sort-box">
+            <select id="sortSelect" class="sort-select" title="Urutkan daftar nomor" aria-label="Urutkan daftar nomor">
+              <option value="newest">🕒 Terbaru</option>
+              <option value="oldest">⏳ Terlama</option>
+              <option value="phone">🔢 Nomor HP (0-9)</option>
+              <option value="available-desc">🟢 Voucher Terbanyak</option>
+              <option value="used-desc">🔴 Voucher Paling Habis</option>
+            </select>
+          </div>
         </div>
 
         <!-- Filter Pills -->
@@ -203,6 +214,13 @@
           <span class="bulk-selected-label">nomor dipilih</span>
         </div>
         <div class="bulk-bar-buttons">
+          <button id="btnBulkCopy" class="btn btn-sm btn-action" title="Salin semua nomor terpilih ke clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span>Salin</span>
+          </button>
           <button id="btnBulkMarkV1" class="btn btn-sm btn-action" title="Tandai Voucher 1 X pada nomor terpilih">
             <span class="v-tag">V1</span> Tandai X
           </button>

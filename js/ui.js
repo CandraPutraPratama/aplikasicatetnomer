@@ -6,6 +6,7 @@ export class PhoneUI {
   constructor() {
     this.selectedIds = new Set();
     this.currentFilter = 'all';
+    this.currentSort = 'newest';
     this.searchQuery = '';
     
     // Cache DOM Elements
@@ -28,9 +29,10 @@ export class PhoneUI {
       badgeFilterOne: document.getElementById('badgeFilterOne'),
       badgeFilterBoth: document.getElementById('badgeFilterBoth'),
       
-      // Search & Filters
+      // Search & Filters & Sort
       searchInput: document.getElementById('searchInput'),
       btnClearSearch: document.getElementById('btnClearSearch'),
+      sortSelect: document.getElementById('sortSelect'),
       filterPills: document.querySelectorAll('.filter-pill'),
       
       // Select all & Bulk bar
@@ -38,6 +40,7 @@ export class PhoneUI {
       activeCountText: document.getElementById('activeCountText'),
       bulkActionBar: document.getElementById('bulkActionBar'),
       bulkSelectedCount: document.getElementById('bulkSelectedCount'),
+      btnBulkCopy: document.getElementById('btnBulkCopy'),
       btnBulkMarkV1: document.getElementById('btnBulkMarkV1'),
       btnBulkMarkV2: document.getElementById('btnBulkMarkV2'),
       btnBulkReset: document.getElementById('btnBulkReset'),
@@ -76,9 +79,22 @@ export class PhoneUI {
   }
 
   /**
-   * Display a clean toast message.
+   * Subtle haptic feedback for mobile devices.
    */
-  showToast(message, type = 'info', duration = 2500) {
+  vibrate(ms = 30) {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(ms);
+      } catch (e) {
+        // Ignore if vibration is disallowed
+      }
+    }
+  }
+
+  /**
+   * Display a clean toast message with optional Action button (e.g. Undo).
+   */
+  showToast(message, type = 'info', duration = 3000, action = null) {
     if (!this.elements.toastContainer) return;
     
     const toast = document.createElement('div');
@@ -94,6 +110,19 @@ export class PhoneUI {
     }
 
     toast.innerHTML = `${iconSvg}<span>${this.escapeHtml(message)}</span>`;
+
+    if (action && action.label && typeof action.callback === 'function') {
+      const actionBtn = document.createElement('button');
+      actionBtn.className = 'toast-action-btn';
+      actionBtn.textContent = action.label;
+      actionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        action.callback();
+        toast.remove();
+      });
+      toast.appendChild(actionBtn);
+    }
+
     this.elements.toastContainer.appendChild(toast);
 
     setTimeout(() => {
