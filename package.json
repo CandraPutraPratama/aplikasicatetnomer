@@ -1,0 +1,13 @@
+{
+  "name": "aplikasicatetnomer",
+  "version": "1.0.0",
+  "description": "Aplikasi pribadi untuk mengelola daftar nomor telepon dan status penanda voucher secara cepat dan efisien.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": ["phone-manager", "voucher-tracker", "pwa", "offline-first"],
+  "author": "",
+  "license": "MIT"
+}
