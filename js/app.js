@@ -9,6 +9,8 @@ class App {
   constructor() {
     this.store = new PhoneStore();
     this.ui = new PhoneUI();
+    this.ui.currentSort = 'manual';
+    this.pendingDividerAction = null;
   }
 
   init() {
@@ -113,6 +115,69 @@ class App {
           this.ui.pendingDeleteIds = [id];
           elements.deleteModalMessage.textContent = `Hapus nomor ${item.phone} dari daftar?`;
           this.ui.openModal(elements.deleteModal);
+        }
+        return;
+      }
+
+      // Inline Insert Header button
+      const insertHdrBtn = e.target.closest('[data-action="insert-header"]');
+      if (insertHdrBtn) {
+        const afterId = insertHdrBtn.dataset.afterId;
+        this.ui.vibrate(25);
+        this.openDividerModal('insert', 'header', afterId);
+        return;
+      }
+
+      // Inline Insert Subheader button
+      const insertSubBtn = e.target.closest('[data-action="insert-subheader"]');
+      if (insertSubBtn) {
+        const afterId = insertSubBtn.dataset.afterId;
+        this.ui.vibrate(25);
+        this.openDividerModal('insert', 'subheader', afterId);
+        return;
+      }
+
+      // Edit Divider button
+      const editDivBtn = e.target.closest('[data-action="edit-divider"]');
+      if (editDivBtn) {
+        const id = editDivBtn.dataset.id;
+        this.ui.vibrate(25);
+        this.openDividerModal('edit', null, null, id);
+        return;
+      }
+
+      // Delete Divider button
+      const delDivBtn = e.target.closest('[data-action="delete-divider"]');
+      if (delDivBtn) {
+        const id = delDivBtn.dataset.id;
+        const item = this.store.getItem(id);
+        if (item) {
+          this.ui.vibrate(35);
+          const title = item.title;
+          this.store.deleteDivider(id);
+          this.ui.showToast(`Pembatas "${title}" berhasil dihapus`, 'info', 4000, {
+            label: 'Urungkan (Undo)',
+            callback: () => {
+              this.store.undo();
+              this.ui.vibrate(25);
+              this.ui.showToast('Penghapusan pembatas dibatalkan', 'success');
+              this.refresh();
+            }
+          });
+          this.refresh();
+        }
+        return;
+      }
+
+      // Move Item Up / Down button
+      const moveBtn = e.target.closest('[data-action="move-item"]');
+      if (moveBtn) {
+        const id = moveBtn.dataset.id;
+        const direction = moveBtn.dataset.direction;
+        const moved = this.store.moveItem(id, direction);
+        if (moved) {
+          this.ui.vibrate(20);
+          this.refresh();
         }
         return;
       }
@@ -390,7 +455,67 @@ class App {
       reader.readAsText(file);
     });
 
-    // --- 8. Generic Modal Close Buttons & Backdrop Clicks ---
+    // --- 8. Divider (Judul & Sub Judul) Modals & Toolbar Buttons ---
+    if (elements.btnAddHeaderTop) {
+      elements.btnAddHeaderTop.addEventListener('click', () => {
+        this.ui.vibrate(25);
+        this.openDividerModal('insert', 'header', null);
+      });
+    }
+
+    if (elements.btnAddSubheaderTop) {
+      elements.btnAddSubheaderTop.addEventListener('click', () => {
+        this.ui.vibrate(25);
+        this.openDividerModal('insert', 'subheader', null);
+      });
+    }
+
+    // Confirm Divider Button in Modal
+    const confirmDividerHandler = () => {
+      if (!this.pendingDividerAction) return;
+      const { action, type, afterId, existingId } = this.pendingDividerAction;
+      const inputVal = elements.dividerTitleInput.value.trim();
+
+      if (action === 'insert') {
+        const defaultTitle = type === 'header' ? 'APLIKASI BARU' : 'Sub Judul';
+        const title = inputVal || defaultTitle;
+        if (type === 'header') {
+          this.store.addHeader(title, afterId);
+          this.ui.showToast(`Judul "${title}" berhasil disisipkan!`, 'success');
+        } else {
+          this.store.addSubheader(title, afterId);
+          this.ui.showToast(`Sub Judul "${title}" berhasil disisipkan!`, 'success');
+        }
+      } else if (action === 'edit') {
+        if (existingId) {
+          const item = this.store.getItem(existingId);
+          const fallback = item && item.type === 'header' ? 'JUDUL' : 'Sub Judul';
+          const title = inputVal || fallback;
+          this.store.updateDividerTitle(existingId, title);
+          this.ui.showToast(`Nama pembatas diubah menjadi "${title}"`, 'success');
+        }
+      }
+
+      this.ui.vibrate(30);
+      this.ui.closeModal(elements.dividerModal);
+      this.pendingDividerAction = null;
+      this.refresh();
+    };
+
+    if (elements.btnConfirmDivider) {
+      elements.btnConfirmDivider.addEventListener('click', confirmDividerHandler);
+    }
+
+    if (elements.dividerTitleInput) {
+      elements.dividerTitleInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          confirmDividerHandler();
+        }
+      });
+    }
+
+    // --- 9. Generic Modal Close Buttons & Backdrop Clicks ---
     document.querySelectorAll('[data-close-modal]').forEach(btn => {
       btn.addEventListener('click', () => {
         const modalId = btn.dataset.closeModal;
@@ -422,6 +547,42 @@ class App {
         elements.searchInput.focus();
       }
     });
+  }
+
+  /**
+   * Open the divider modal for insert or edit.
+   */
+  openDividerModal(action, type, afterId = null, existingId = null) {
+    const { elements } = this.ui;
+    this.pendingDividerAction = { action, type, afterId, existingId };
+
+    if (action === 'insert') {
+      if (type === 'header') {
+        const headers = this.store.getAll().filter(item => item.type === 'header');
+        const nextNum = headers.length + 1;
+        elements.dividerModalTitle.textContent = 'Tambah Judul Pembatas (Aplikasi)';
+        elements.dividerModalDesc.textContent = 'Masukkan nama aplikasi atau kategori utama untuk nomor-nomor di bawahnya.';
+        elements.dividerTitleInput.placeholder = `Contoh: APLIKASI ${nextNum} atau SHOPEE`;
+        elements.dividerTitleInput.value = `APLIKASI ${nextNum}`;
+      } else {
+        elements.dividerModalTitle.textContent = 'Tambah Sub Judul Pembatas';
+        elements.dividerModalDesc.textContent = 'Masukkan nomor urut atau sub-kategori nomor.';
+        elements.dividerTitleInput.placeholder = 'Contoh: 1, 2, atau Batch 1';
+        elements.dividerTitleInput.value = '';
+      }
+    } else if (action === 'edit') {
+      const item = this.store.getItem(existingId);
+      const isHeader = item && item.type === 'header';
+      elements.dividerModalTitle.textContent = isHeader ? 'Ubah Nama Judul' : 'Ubah Nama Sub Judul';
+      elements.dividerModalDesc.textContent = 'Perbarui nama pembatas ini:';
+      elements.dividerTitleInput.value = item ? item.title : '';
+    }
+
+    this.ui.openModal(elements.dividerModal);
+    setTimeout(() => {
+      elements.dividerTitleInput.focus();
+      elements.dividerTitleInput.select();
+    }, 120);
   }
 
   /**

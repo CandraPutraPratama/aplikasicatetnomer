@@ -281,4 +281,144 @@ describe('PhoneStore - Core Data Layer', () => {
       assert.ok(csv.includes('"081111111111","X","Belum"'));
     });
   });
+
+  describe('Dividers: Judul & Sub Judul', () => {
+    it('adds header and subheader dividers at end, beginning, and between items', () => {
+      store.addNumbers('081111111111\n082222222222\n083333333333');
+      const itemsInitial = store.getAll();
+      const firstPhoneId = itemsInitial[0].id;
+      const secondPhoneId = itemsInitial[1].id;
+
+      // Add Header at the very top (afterId = null)
+      const hdrTop = store.addHeader('APLIKASI UTAMA', null);
+      assert.equal(hdrTop.type, 'header');
+      assert.equal(hdrTop.title, 'APLIKASI UTAMA');
+      assert.ok(hdrTop.id.startsWith('hdr_'));
+
+      let items = store.getAll();
+      assert.equal(items[0].id, hdrTop.id);
+      assert.equal(items[1].id, firstPhoneId);
+
+      // Add Subheader between first and second phone (afterId = firstPhoneId)
+      const sub1 = store.addSubheader('Sub 1', firstPhoneId);
+      assert.equal(sub1.type, 'subheader');
+      assert.equal(sub1.title, 'Sub 1');
+      assert.ok(sub1.id.startsWith('sub_'));
+
+      items = store.getAll();
+      const firstIndex = items.findIndex(i => i.id === firstPhoneId);
+      assert.equal(items[firstIndex + 1].id, sub1.id);
+      assert.equal(items[firstIndex + 2].id, secondPhoneId);
+
+      // Add another Subheader after second phone
+      const sub2 = store.addSubheader('Sub 2', secondPhoneId);
+      items = store.getAll();
+      const secondIndex = items.findIndex(i => i.id === secondPhoneId);
+      assert.equal(items[secondIndex + 1].id, sub2.id);
+    });
+
+    it('updates divider title', () => {
+      const hdr = store.addHeader('APLIKASI 1');
+      assert.equal(store.getItem(hdr.id).title, 'APLIKASI 1');
+
+      const success = store.updateDividerTitle(hdr.id, 'APLIKASI DANA BARU');
+      assert.equal(success, true);
+      assert.equal(store.getItem(hdr.id).title, 'APLIKASI DANA BARU');
+    });
+
+    it('deletes divider and supports undo', () => {
+      store.addNumbers('081111111111');
+      const hdr = store.addHeader('APLIKASI 1');
+      assert.equal(store.getAll().length, 2);
+
+      const deleted = store.deleteDivider(hdr.id);
+      assert.equal(deleted, true);
+      assert.equal(store.getAll().length, 1);
+      assert.equal(store.getItem(hdr.id), null);
+
+      // Undo deletion
+      store.undo();
+      assert.equal(store.getAll().length, 2);
+      assert.equal(store.getItem(hdr.id).title, 'APLIKASI 1');
+    });
+
+    it('moves item up and down', () => {
+      store.addNumbers('081111111111\n082222222222');
+      const hdr = store.addHeader('APLIKASI 1', null); // [hdr, phone1, phone2]
+      assert.equal(store.getAll()[0].id, hdr.id);
+
+      // Move hdr down -> [phone1, hdr, phone2]
+      const movedDown = store.moveItem(hdr.id, 'down');
+      assert.equal(movedDown, true);
+      assert.equal(store.getAll()[1].id, hdr.id);
+
+      // Move hdr up -> back to [hdr, phone1, phone2]
+      const movedUp = store.moveItem(hdr.id, 'up');
+      assert.equal(movedUp, true);
+      assert.equal(store.getAll()[0].id, hdr.id);
+
+      // Cannot move up beyond top
+      const movedTopAgain = store.moveItem(hdr.id, 'up');
+      assert.equal(movedTopAgain, false);
+    });
+
+    it('keeps getStats accurate by ignoring dividers', () => {
+      store.addNumbers('081111111111\n082222222222');
+      store.addHeader('APLIKASI 1');
+      store.addSubheader('Batch 1');
+      store.addHeader('APLIKASI 2');
+
+      const stats = store.getStats();
+      assert.equal(stats.totalNumbers, 2);
+      assert.equal(stats.totalVouchersCapacity, 4);
+      assert.equal(stats.totalVouchersRemaining, 4);
+      assert.equal(stats.totalVouchersUsed, 0);
+    });
+
+    it('preserves array sequence in manual sort and filters search', () => {
+      const hdr1 = store.addHeader('SHOPEE VIP');
+      store.addNumbers('081234567890');
+      const sub1 = store.addSubheader('Gelombang 1', store.getAll()[1].id);
+      store.addNumbers('089876543210');
+
+      const manualItems = store.getFiltered('', 'all', 'manual');
+      assert.equal(manualItems.length, 4);
+      assert.equal(manualItems[0].id, hdr1.id);
+      assert.equal(manualItems[2].id, sub1.id);
+
+      // Search matches header title
+      const searchHdr = store.getFiltered('shopee', 'all', 'manual');
+      assert.equal(searchHdr.length, 1);
+      assert.equal(searchHdr[0].title, 'SHOPEE VIP');
+
+      // Search matches phone number
+      const searchPhone = store.getFiltered('8765', 'all', 'manual');
+      assert.equal(searchPhone.length, 1);
+      assert.equal(searchPhone[0].phone, '089876543210');
+    });
+
+    it('exports and imports dividers via JSON and CSV', () => {
+      const hdr = store.addHeader('APLIKASI 1');
+      store.addNumbers('081122334455');
+      const sub = store.addSubheader('1', store.getAll()[1].id);
+
+      // JSON export & import
+      const json = store.exportJSON();
+      const restoredStore = new PhoneStore(new MemoryStorage());
+      restoredStore.importJSON(json, 'replace');
+
+      const restoredItems = restoredStore.getAll();
+      assert.equal(restoredItems.length, 3);
+      assert.equal(restoredItems[0].type, 'header');
+      assert.equal(restoredItems[0].title, 'APLIKASI 1');
+      assert.equal(restoredItems[1].phone, '081122334455');
+      assert.equal(restoredItems[2].type, 'subheader');
+      assert.equal(restoredItems[2].title, '1');
+
+      // CSV export
+      const csv = store.exportCSV();
+      assert.ok(csv.includes('[JUDUL] APLIKASI 1'));
+      assert.ok(csv.includes('[SUB JUDUL] 1'));
+    });
+  });
 });

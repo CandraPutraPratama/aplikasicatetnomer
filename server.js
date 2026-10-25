@@ -7,8 +7,9 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { exec } from 'node:child_process';
 
-const PORT = process.env.PORT || 3000;
+let PORT = parseInt(process.env.PORT || '3000', 10);
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -55,20 +56,40 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n======================================================`);
-  console.log(`🚀 Aplikasi Catet Nomer & Voucher Aktif!`);
-  console.log(`======================================================`);
-  console.log(`💻 Buka di Laptop/PC : http://localhost:${PORT}`);
+function listen(port) {
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`\n======================================================`);
+    console.log(`🚀 Aplikasi Catet Nomer & Voucher Aktif!`);
+    console.log(`======================================================`);
+    console.log(`💻 Buka di Laptop/PC : http://localhost:${port}`);
 
-  // Print local network IP for mobile phone access
-  const networkInterfaces = os.networkInterfaces();
-  for (const name of Object.keys(networkInterfaces)) {
-    for (const net of networkInterfaces[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        console.log(`📱 Buka di HP (WiFi) : http://${net.address}:${PORT}`);
+    // Print local network IP for mobile phone access
+    const networkInterfaces = os.networkInterfaces();
+    for (const name of Object.keys(networkInterfaces)) {
+      for (const net of networkInterfaces[name]) {
+        if (net.family === 'IPv4' && !net.internal) {
+          console.log(`📱 Buka di HP (WiFi) : http://${net.address}:${port}`);
+        }
       }
     }
+    console.log(`======================================================\n`);
+
+    // Otomatis buka browser di laptop
+    if (process.env.AUTO_OPEN !== 'false') {
+      const openCmd = process.platform === 'win32' ? `start http://localhost:${port}` : `open http://localhost:${port}`;
+      exec(openCmd, () => {});
+    }
+  });
+}
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`Port ${PORT} sedang dipakai, otomatis beralih ke port ${PORT + 1}...`);
+    PORT++;
+    listen(PORT);
+  } else {
+    console.error('Server error:', err);
   }
-  console.log(`======================================================\n`);
 });
+
+listen(PORT);

@@ -15,9 +15,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo Memulai server lokal...
-echo Buka di browser: http://localhost:3000
 echo.
 
-start "" "http://localhost:3000"
 node server.js
 pause

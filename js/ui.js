@@ -56,6 +56,14 @@ export class PhoneUI {
       btnPasteClipboard: document.getElementById('btnPasteClipboard'),
       btnConfirmAdd: document.getElementById('btnConfirmAdd'),
       
+      dividerModal: document.getElementById('dividerModal'),
+      dividerModalTitle: document.getElementById('dividerModalTitle'),
+      dividerModalDesc: document.getElementById('dividerModalDesc'),
+      dividerTitleInput: document.getElementById('dividerTitleInput'),
+      btnConfirmDivider: document.getElementById('btnConfirmDivider'),
+      btnAddHeaderTop: document.getElementById('btnAddHeaderTop'),
+      btnAddSubheaderTop: document.getElementById('btnAddSubheaderTop'),
+
       deleteModal: document.getElementById('deleteModal'),
       deleteModalMessage: document.getElementById('deleteModalMessage'),
       btnConfirmDelete: document.getElementById('btnConfirmDelete'),
@@ -177,12 +185,78 @@ export class PhoneUI {
     }
 
     // Update active count text
-    this.elements.activeCountText.textContent = `Menampilkan ${items.length} dari ${totalCount} nomor`;
+    const visiblePhones = items.filter(item => !item.type || item.type === 'phone');
+    this.elements.activeCountText.textContent = `Menampilkan ${visiblePhones.length} dari ${totalCount} nomor`;
 
     // Render items
     const fragment = document.createDocumentFragment();
 
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // Render Divider (Header / Subheader)
+      if (item.type === 'header' || item.type === 'subheader') {
+        const isHeader = item.type === 'header';
+
+        // Count phone numbers belonging to this section
+        let sectionPhoneCount = 0;
+        for (let j = i + 1; j < items.length; j++) {
+          const next = items[j];
+          if (isHeader && next.type === 'header') break;
+          if (!isHeader && (next.type === 'header' || next.type === 'subheader')) break;
+          if (!next.type || next.type === 'phone') {
+            sectionPhoneCount++;
+          }
+        }
+
+        const dividerCard = document.createElement('div');
+        dividerCard.className = `divider-card ${isHeader ? 'divider-header' : 'divider-subheader'}`;
+        dividerCard.dataset.id = item.id;
+
+        const badgeText = isHeader ? 'APLIKASI' : 'SUB';
+        const badgeClass = isHeader ? 'header-badge' : 'subheader-badge';
+        const titleClass = isHeader ? 'header-title' : 'subheader-title';
+        const countLabel = `${sectionPhoneCount} nomor`;
+
+        dividerCard.innerHTML = `
+          <div class="divider-left">
+            <span class="divider-badge ${badgeClass}">${badgeText}</span>
+            <span class="divider-title ${titleClass}">${this.escapeHtml(item.title)}</span>
+            <span class="divider-count-badge">${countLabel}</span>
+          </div>
+          <div class="divider-actions">
+            <button class="btn-divider-action" data-action="move-item" data-direction="up" data-id="${item.id}" title="Geser ke atas">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <button class="btn-divider-action" data-action="move-item" data-direction="down" data-id="${item.id}" title="Geser ke bawah">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="btn-divider-action" data-action="edit-divider" data-id="${item.id}" title="Ubah nama pembatas">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+            <button class="btn-divider-action danger" data-action="delete-divider" data-id="${item.id}" title="Hapus pembatas ini">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        `;
+        fragment.appendChild(dividerCard);
+
+        // Add inline insert strip under this divider
+        const insertStrip = document.createElement('div');
+        insertStrip.className = 'card-insert-strip';
+        insertStrip.innerHTML = `
+          <button class="btn-insert-inline" data-action="insert-header" data-after-id="${item.id}" title="Sisipkan Judul di bawah ini">
+            <span>+ Judul</span>
+          </button>
+          <button class="btn-insert-inline" data-action="insert-subheader" data-after-id="${item.id}" title="Sisipkan Sub Judul di bawah ini">
+            <span>+ Sub Judul</span>
+          </button>
+        `;
+        fragment.appendChild(insertStrip);
+        continue;
+      }
+
+      // Render Phone Card
       const isSelected = this.selectedIds.has(item.id);
       const card = document.createElement('div');
       card.className = `phone-card ${isSelected ? 'selected' : ''}`;
@@ -239,6 +313,19 @@ export class PhoneUI {
       `;
 
       fragment.appendChild(card);
+
+      // Add inline insert strip under each phone card
+      const insertStrip = document.createElement('div');
+      insertStrip.className = 'card-insert-strip';
+      insertStrip.innerHTML = `
+        <button class="btn-insert-inline" data-action="insert-header" data-after-id="${item.id}" title="Sisipkan Judul di bawah nomor ini">
+          <span>+ Judul</span>
+        </button>
+        <button class="btn-insert-inline" data-action="insert-subheader" data-after-id="${item.id}" title="Sisipkan Sub Judul di bawah nomor ini">
+          <span>+ Sub Judul</span>
+        </button>
+      `;
+      fragment.appendChild(insertStrip);
     }
 
     container.appendChild(fragment);
@@ -268,20 +355,21 @@ export class PhoneUI {
    * Sync the Select All master checkbox.
    */
   updateSelectAllCheckbox(displayedItems) {
-    if (displayedItems.length === 0) {
+    const phoneItems = displayedItems.filter(item => !item.type || item.type === 'phone');
+    if (phoneItems.length === 0) {
       this.elements.selectAllCheckbox.checked = false;
       this.elements.selectAllCheckbox.indeterminate = false;
       return;
     }
 
     let selectedCountInView = 0;
-    for (const item of displayedItems) {
+    for (const item of phoneItems) {
       if (this.selectedIds.has(item.id)) {
         selectedCountInView++;
       }
     }
 
-    if (selectedCountInView === displayedItems.length) {
+    if (selectedCountInView === phoneItems.length) {
       this.elements.selectAllCheckbox.checked = true;
       this.elements.selectAllCheckbox.indeterminate = false;
     } else if (selectedCountInView > 0) {

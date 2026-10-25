@@ -124,4 +124,80 @@ describe('End-to-End User Story & Workflow Simulation', () => {
     const persistentStore = new PhoneStore(storage);
     assert.equal(persistentStore.getAll().length, 3);
   });
+
+  it('Simulates complete user flow for Section Dividers: Insert Judul -> Insert Sub Judul -> Reorder -> Edit -> Backup', () => {
+    const storage = new MockStorage();
+    const store = new PhoneStore(storage);
+
+    // 1. User starts with 4 phone numbers
+    store.addNumbers('081200000001\n081200000002\n081200000003\n081200000004');
+    let items = store.getAll();
+    assert.equal(items.length, 4);
+
+    // 2. User adds Judul "APLIKASI 1" at the very top
+    const hdr1 = store.addHeader('APLIKASI 1', null);
+    items = store.getAll();
+    assert.equal(items[0].id, hdr1.id);
+    assert.equal(items[0].type, 'header');
+    assert.equal(items[0].title, 'APLIKASI 1');
+
+    // 3. User inserts Sub Judul "1" right below Judul APLIKASI 1
+    const sub1 = store.addSubheader('1', hdr1.id);
+    items = store.getAll();
+    assert.equal(items[1].id, sub1.id);
+    assert.equal(items[1].type, 'subheader');
+    assert.equal(items[1].title, '1');
+
+    // 4. User inserts Sub Judul "2" after second phone number (081200000002)
+    const phone2 = items.find(i => i.phone === '081200000002');
+    const sub2 = store.addSubheader('2', phone2.id);
+    items = store.getAll();
+    const phone2Index = items.findIndex(i => i.id === phone2.id);
+    assert.equal(items[phone2Index + 1].id, sub2.id);
+    assert.equal(items[phone2Index + 1].title, '2');
+
+    // 5. User adds Judul "APLIKASI 2" at the bottom of the list
+    const hdr2 = store.addHeader('APLIKASI 2', 'bottom');
+    items = store.getAll();
+    assert.equal(items[items.length - 1].id, hdr2.id);
+    assert.equal(items[items.length - 1].title, 'APLIKASI 2');
+
+    // 6. User renames "APLIKASI 2" to "APLIKASI SHOPEE"
+    store.updateDividerTitle(hdr2.id, 'APLIKASI SHOPEE');
+    assert.equal(store.getItem(hdr2.id).title, 'APLIKASI SHOPEE');
+
+    // 7. Stats check: Total numbers must strictly remain 4 (dividers not counted as phone numbers)
+    const stats = store.getStats();
+    assert.equal(stats.totalNumbers, 4);
+    assert.equal(stats.totalVouchersCapacity, 8);
+    assert.equal(stats.totalVouchersRemaining, 8);
+
+    // 8. Move item: Move Sub 2 up
+    const sub2IdxBefore = store.getAll().findIndex(i => i.id === sub2.id);
+    store.moveItem(sub2.id, 'up');
+    const sub2IdxAfter = store.getAll().findIndex(i => i.id === sub2.id);
+    assert.equal(sub2IdxAfter, sub2IdxBefore - 1);
+
+    // 9. Search: filter by "shopee" matches divider
+    const searchRes = store.getFiltered('shopee', 'all', 'manual');
+    assert.equal(searchRes.length, 1);
+    assert.equal(searchRes[0].title, 'APLIKASI SHOPEE');
+
+    // 10. Backup JSON and restore: verifies relative order is 100% preserved
+    const json = store.exportJSON();
+    const newStorage = new MockStorage();
+    const restoredStore = new PhoneStore(newStorage);
+    restoredStore.importJSON(json, 'replace');
+
+    const restoredItems = restoredStore.getAll();
+    assert.equal(restoredItems.length, store.getAll().length);
+    assert.equal(restoredItems[0].title, 'APLIKASI 1');
+    assert.equal(restoredItems[1].title, '1');
+
+    // 11. CSV export includes sections
+    const csv = store.exportCSV();
+    assert.ok(csv.includes('[JUDUL] APLIKASI 1'));
+    assert.ok(csv.includes('[SUB JUDUL] 1'));
+    assert.ok(csv.includes('[JUDUL] APLIKASI SHOPEE'));
+  });
 });

@@ -125,6 +125,7 @@
           </div>
           <div class="sort-box">
             <select id="sortSelect" class="sort-select" title="Urutkan daftar nomor" aria-label="Urutkan daftar nomor">
+              <option value="manual" selected>📋 Urutan Posisi (Default)</option>
               <option value="newest">🕒 Terbaru</option>
               <option value="oldest">⏳ Terlama</option>
               <option value="phone">🔢 Nomor HP (0-9)</option>
@@ -168,6 +169,20 @@
           </div>
 
           <div class="list-quick-actions">
+            <button id="btnAddHeaderTop" class="btn btn-outline btn-sm btn-insert-top" title="Tambah Judul / Pembatas Aplikasi di posisi teratas">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>+ Judul</span>
+            </button>
+            <button id="btnAddSubheaderTop" class="btn btn-outline btn-sm btn-insert-top" title="Tambah Sub Judul / Pembatas Nomor di posisi teratas">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>+ Sub Judul</span>
+            </button>
             <button id="btnQuickResetAll" class="btn btn-outline btn-sm" title="Reset tanda X pada semua nomor tanpa menghapus nomor">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 2v6h6"/>
@@ -396,6 +411,28 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-close-modal="backupModal" type="button">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah / Edit Pembatas (Judul / Sub Judul) -->
+  <div id="dividerModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dividerModalTitle">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <h3 id="dividerModalTitle" class="modal-title">Tambah Pembatas</h3>
+        <button class="modal-close" data-close-modal="dividerModal" aria-label="Tutup modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="dividerModalDesc" class="modal-hint">
+          Masukkan nama judul pembatas untuk mengelompokkan stok nomor.
+        </p>
+        <div class="textarea-wrapper" style="margin-top: 0.75rem;">
+          <input type="text" id="dividerTitleInput" class="modal-input" placeholder="Contoh: APLIKASI 1 atau 1" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="dividerModal" type="button">Batal</button>
+        <button id="btnConfirmDivider" class="btn btn-primary" type="button">Simpan Pembatas</button>
       </div>
     </div>
   </div>

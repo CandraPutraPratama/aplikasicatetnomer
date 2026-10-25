@@ -47,6 +47,14 @@ Aplikasi web pribadi (PWA) yang cepat, ringan, dan efisien untuk mengelola dafta
    - Dapat diinstall langsung ke layar utama HP (*Add to Home screen*).
    - Berfungsi 100% offline tanpa internet melalui *Service Worker*.
 
+8. **Pembatas Judul & Sub Judul (Pengelompokan Stok per Aplikasi)**
+   - Bebas disisipkan di sela-sela baris nomor telepon dengan tombol `+ Judul` dan `+ Sub Judul` di bawah setiap baris nomor maupun pada toolbar atas.
+   - **Judul (Header)**: Menandai aplikasi utama (misal: *APLIKASI 1*, *SHOPEE*, *DANA*), dilengkapi badge jumlah nomor yang ada di bawah bagian tersebut.
+   - **Sub Judul (Subheader)**: Menandai sub-kelompok atau nomor urut (misal: *1*, *2*, *Batch A*).
+   - Tombol aksi interaktif pada setiap pembatas: Ubah nama judul (Edit), Geser posisi naik/turun (↑ / ↓), dan Hapus (dilengkapi fitur Urungkan / Undo).
+   - Pilihan sort **Urutan Posisi (Default)** menjaga tata letak pembatas tetap utuh.
+   - Ekspor & Impor (JSON & CSV) mempertahankan seluruh struktur pembatas dan urutan nomor.
+
 ---
 
 ## 🚀 Cara Menjalankan Aplikasi
