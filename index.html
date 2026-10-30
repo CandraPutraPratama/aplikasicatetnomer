@@ -165,26 +165,27 @@
               <span class="checkbox-box"></span>
               <span class="select-all-text">Pilih Semua</span>
             </label>
+            <span class="toolbar-sep">•</span>
             <span class="active-count-text" id="activeCountText">Menampilkan 0 nomor</span>
           </div>
 
           <div class="list-quick-actions">
             <button id="btnAddHeaderTop" class="btn btn-outline btn-sm btn-insert-top" title="Tambah Judul / Pembatas Aplikasi di posisi teratas">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              <span>+ Judul</span>
+              <span>Judul</span>
             </button>
             <button id="btnAddSubheaderTop" class="btn btn-outline btn-sm btn-insert-top" title="Tambah Sub Judul / Pembatas Nomor di posisi teratas">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              <span>+ Sub Judul</span>
+              <span>Sub Judul</span>
             </button>
-            <button id="btnQuickResetAll" class="btn btn-outline btn-sm" title="Reset tanda X pada semua nomor tanpa menghapus nomor">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button id="btnQuickResetAll" class="btn btn-outline btn-sm btn-reset-all-top" title="Reset tanda X pada semua nomor tanpa menghapus nomor">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 2v6h6"/>
                 <path d="M21 12A9 9 0 0 0 6 5.3L3 8"/>
                 <path d="M21 22v-6h-6"/>
@@ -273,10 +274,10 @@
       </div>
       <div class="modal-body">
         <p class="modal-hint">
-          Tempel daftar nomor dari WhatsApp, Excel, atau Catatan HP. Mendukung format per baris, koma, spasi, atau awalan +62/08.
+          Tempel daftar nomor dari WhatsApp, Excel, atau Catatan HP. Sistem menerima semua jenis dan panjang nomor (format per baris, koma, spasi, awalan +62/08, nomor pendek maupun panjang).
         </p>
         <div class="textarea-wrapper">
-          <textarea id="bulkInputArea" class="modal-textarea" rows="6" placeholder="Contoh:&#10;081234567890&#10;+62 813-9988-7766&#10;085711223344, 089988776655"></textarea>
+          <textarea id="bulkInputArea" class="modal-textarea" rows="6" placeholder="Contoh:&#10;081234567890&#10;+62 813-9988-7766&#10;12345&#10;085711223344, 089988776655"></textarea>
         </div>
         <div class="input-preview-bar">
           <span id="parsedPreviewCount" class="preview-text">0 nomor terdeteksi</span>

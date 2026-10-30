@@ -391,7 +391,7 @@ class App {
 
       const result = this.store.addNumbers(rawText);
       if (result.added === 0 && result.duplicates === 0) {
-        this.ui.showToast('Tidak ada nomor telepon valid yang ditemukan');
+        this.ui.showToast('Tidak ada nomor yang ditemukan');
         return;
       }
 

@@ -53,6 +53,26 @@ describe('PhoneStore - Core Data Layer', () => {
       const parsed = store.parseRawNumbers('+628123456789\n6285211223344');
       assert.deepEqual(parsed, ['08123456789', '085211223344']);
     });
+
+    it('accepts any number regardless of length, dummy numbers, foreign formats, or short numbers without validation rejection', () => {
+      const raw = `
+        12345
+        081
+        0000000000
+        99999999999999999999
+        +12025550123
+        nomor-tanpa-digit
+        8570001
+      `;
+      const parsed = store.parseRawNumbers(raw);
+      assert.ok(parsed.includes('12345'));
+      assert.ok(parsed.includes('081'));
+      assert.ok(parsed.includes('0000000000'));
+      assert.ok(parsed.includes('99999999999999999999'));
+      assert.ok(parsed.includes('12025550123') || parsed.includes('+12025550123'));
+      assert.ok(parsed.includes('8570001'));
+      assert.equal(parsed.includes('nomor-tanpa-digit'), false);
+    });
   });
 
   describe('addNumbers & persistence', () => {
@@ -79,6 +99,12 @@ describe('PhoneStore - Core Data Layer', () => {
       assert.equal(result.added, 1);
       assert.equal(result.duplicates, 1);
       assert.equal(store.getAll().length, 2);
+    });
+
+    it('successfully adds and persists any number format without rejection', () => {
+      const res = store.addNumbers('12345\n0800000\n+1999888777');
+      assert.equal(res.added, 3);
+      assert.equal(store.getAll().length, 3);
     });
   });
 
@@ -270,6 +296,16 @@ describe('PhoneStore - Core Data Layer', () => {
       assert.equal(store.getAll().length, 2);
       assert.equal(result.imported, 1);
       assert.equal(result.duplicates, 1);
+    });
+
+    it('imports numbers of any length without discarding them', () => {
+      const json = JSON.stringify([
+        { phone: '12345', v1: false, v2: false },
+        { phone: '99999999999999999999', v1: true, v2: false }
+      ]);
+      const res = store.importJSON(json, 'replace');
+      assert.equal(res.imported, 2);
+      assert.equal(store.getAll().length, 2);
     });
 
     it('exports CSV formatted string', () => {

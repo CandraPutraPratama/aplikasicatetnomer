@@ -86,21 +86,29 @@ export class PhoneStore {
     const seen = new Set();
     const result = [];
 
+    const normalizeNumber = (str) => {
+      let cleaned = str.replace(/[\s\-\.\(\)\/]/g, '');
+      if (cleaned.startsWith('+62')) {
+        cleaned = '0' + cleaned.slice(3);
+      } else if (cleaned.startsWith('62') && (cleaned.startsWith('628') || cleaned.length >= 8)) {
+        cleaned = '0' + cleaned.slice(2);
+      } else if (cleaned.startsWith('+')) {
+        cleaned = cleaned.slice(1);
+      }
+      return cleaned;
+    };
+
     for (let line of lines) {
       line = line.trim();
       if (!line) continue;
 
-      // Match phone number sequences with possible internal spaces/dashes
-      const matches = line.match(/(?:\+62|62|0)[\d\s\-\.\(\)]{6,20}\b/g);
+      // Match phone numbers / digit sequences with possible internal spaces, dashes, dots
+      const matches = line.match(/(?:\+?\d[\d\s\-\.\(\)\/]{1,30}\d|\d+)/g);
       if (matches && matches.length > 0) {
         for (let m of matches) {
-          let cleaned = m.replace(/[\s\-\.\(\)\/]/g, '');
-          if (cleaned.startsWith('+62')) {
-            cleaned = '0' + cleaned.slice(3);
-          } else if (cleaned.startsWith('62')) {
-            cleaned = '0' + cleaned.slice(2);
-          }
-          if (/^\d{8,16}$/.test(cleaned)) {
+          const cleaned = normalizeNumber(m);
+          // Accept any sequence containing digits (no strict 8-16 limit)
+          if (/^\d+$/.test(cleaned) && cleaned.length > 0) {
             if (!seen.has(cleaned)) {
               seen.add(cleaned);
               result.push(cleaned);
@@ -108,14 +116,9 @@ export class PhoneStore {
           }
         }
       } else {
-        // Fallback: strip symbols and check if valid digits
-        let cleaned = line.replace(/[\s\-\.\(\)\/]/g, '');
-        if (cleaned.startsWith('+62')) {
-          cleaned = '0' + cleaned.slice(3);
-        } else if (cleaned.startsWith('62')) {
-          cleaned = '0' + cleaned.slice(2);
-        }
-        if (/^\d{8,16}$/.test(cleaned)) {
+        // Fallback: strip formatting symbols and check if contains digits
+        const cleaned = normalizeNumber(line);
+        if (/^\d+$/.test(cleaned) && cleaned.length > 0) {
           if (!seen.has(cleaned)) {
             seen.add(cleaned);
             result.push(cleaned);
@@ -600,7 +603,7 @@ export class PhoneStore {
         });
       } else if (entry && entry.phone && typeof entry.phone === 'string') {
         const cleaned = entry.phone.replace(/[\s\-\.\(\)]/g, '');
-        if (/^\d{8,16}$/.test(cleaned)) {
+        if (/^\d+$/.test(cleaned) && cleaned.length > 0) {
           validItems.push({
             id: entry.id || 'pn_' + now + '_' + Math.random().toString(36).substring(2, 8),
             type: 'phone',

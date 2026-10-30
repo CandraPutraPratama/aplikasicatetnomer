@@ -200,4 +200,38 @@ describe('End-to-End User Story & Workflow Simulation', () => {
     assert.ok(csv.includes('[SUB JUDUL] 1'));
     assert.ok(csv.includes('[JUDUL] APLIKASI SHOPEE'));
   });
+
+  it('Simulates acceptance of all kinds of numbers without validation rejection', () => {
+    const storage = new MockStorage();
+    const store = new PhoneStore(storage);
+
+    // Mixed input: short numbers, dummy non-existent numbers, long numbers, foreign numbers
+    const mixedInput = `
+      12345
+      0800000000
+      99999999999999999999
+      +12025550123
+      081
+    `;
+    const result = store.addNumbers(mixedInput);
+    assert.equal(result.added, 5, 'Must accept all 5 numbers regardless of length or validity');
+
+    const items = store.getAll();
+    assert.equal(items.length, 5);
+    assert.ok(items.some(i => i.phone === '12345'));
+    assert.ok(items.some(i => i.phone === '0800000000'));
+    assert.ok(items.some(i => i.phone === '99999999999999999999'));
+    assert.ok(items.some(i => i.phone === '081'));
+
+    // Toggle voucher on short number
+    const shortItem = items.find(i => i.phone === '12345');
+    store.toggleVoucher(shortItem.id, 1);
+    assert.equal(store.getItem(shortItem.id).v1, true);
+
+    // Export & re-import preserves all
+    const json = store.exportJSON();
+    const restored = new PhoneStore(new MockStorage());
+    restored.importJSON(json, 'replace');
+    assert.equal(restored.getAll().length, 5);
+  });
 });

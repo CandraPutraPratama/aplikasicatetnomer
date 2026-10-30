@@ -225,16 +225,16 @@ export class PhoneUI {
             <span class="divider-count-badge">${countLabel}</span>
           </div>
           <div class="divider-actions">
-            <button class="btn-divider-action" data-action="move-item" data-direction="up" data-id="${item.id}" title="Geser ke atas">
+            <button class="btn-divider-action" data-action="move-item" data-direction="up" data-id="${item.id}" title="Geser ke atas" aria-label="Geser ke atas">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
             </button>
-            <button class="btn-divider-action" data-action="move-item" data-direction="down" data-id="${item.id}" title="Geser ke bawah">
+            <button class="btn-divider-action" data-action="move-item" data-direction="down" data-id="${item.id}" title="Geser ke bawah" aria-label="Geser ke bawah">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
-            <button class="btn-divider-action" data-action="edit-divider" data-id="${item.id}" title="Ubah nama pembatas">
+            <button class="btn-divider-action" data-action="edit-divider" data-id="${item.id}" title="Ubah nama pembatas" aria-label="Ubah nama">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </button>
-            <button class="btn-divider-action danger" data-action="delete-divider" data-id="${item.id}" title="Hapus pembatas ini">
+            <button class="btn-divider-action danger" data-action="delete-divider" data-id="${item.id}" title="Hapus pembatas ini" aria-label="Hapus pembatas">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
           </div>
@@ -246,10 +246,12 @@ export class PhoneUI {
         insertStrip.className = 'card-insert-strip';
         insertStrip.innerHTML = `
           <button class="btn-insert-inline" data-action="insert-header" data-after-id="${item.id}" title="Sisipkan Judul di bawah ini">
-            <span>+ Judul</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Judul</span>
           </button>
           <button class="btn-insert-inline" data-action="insert-subheader" data-after-id="${item.id}" title="Sisipkan Sub Judul di bawah ini">
-            <span>+ Sub Judul</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Sub Judul</span>
           </button>
         `;
         fragment.appendChild(insertStrip);
@@ -269,46 +271,48 @@ export class PhoneUI {
       const v2Text = item.v2 ? '<span class="voucher-x-mark">✕</span> V2' : 'V2 Tersedia';
 
       const statusBadge = (item.v1 && item.v2) 
-        ? '<span style="color:#f43f5e;font-weight:600;">Semua Terpakai</span>'
+        ? '<span class="status-pill status-pill-rose"><span class="status-dot"></span>Semua Terpakai</span>'
         : (!item.v1 && !item.v2)
-          ? '<span style="color:#10b981;font-weight:600;">2 Voucher Siap</span>'
-          : '<span style="color:#f59e0b;font-weight:600;">1 Voucher Siap</span>';
+          ? '<span class="status-pill status-pill-emerald"><span class="status-dot"></span>2 Voucher Siap</span>'
+          : '<span class="status-pill status-pill-amber"><span class="status-dot"></span>1 Voucher Siap</span>';
 
       card.innerHTML = `
-        <div class="phone-card-left">
-          <label class="custom-checkbox-label" title="Pilih nomor ini">
-            <input type="checkbox" class="custom-checkbox row-select-checkbox" data-select-id="${item.id}" ${isSelected ? 'checked' : ''}>
-            <span class="checkbox-box"></span>
-          </label>
-          <div class="phone-number-group">
-            <div style="display:flex;align-items:center;gap:0.35rem;">
+        <div class="phone-card-top">
+          <div class="phone-main-info">
+            <label class="custom-checkbox-label" title="Pilih nomor ini">
+              <input type="checkbox" class="custom-checkbox row-select-checkbox" data-select-id="${item.id}" ${isSelected ? 'checked' : ''}>
+              <span class="checkbox-box"></span>
+            </label>
+            <div class="phone-number-wrap">
               <span class="phone-number tabular-nums">${item.phone}</span>
-              <button class="btn-copy-number" data-copy-phone="${item.phone}" title="Salin nomor">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button class="btn-copy-number" data-copy-phone="${item.phone}" title="Salin nomor ${item.phone}" aria-label="Salin nomor">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>
               </button>
             </div>
-            <div class="phone-status-meta">
-              <span>${statusBadge}</span>
-            </div>
           </div>
-        </div>
-
-        <div class="phone-card-actions">
-          <button class="voucher-btn ${v1Class}" data-action="toggle-v" data-v="1" data-id="${item.id}" title="Klik untuk ubah status Voucher 1">
-            ${v1Text}
-          </button>
-          <button class="voucher-btn ${v2Class}" data-action="toggle-v" data-v="2" data-id="${item.id}" title="Klik untuk ubah status Voucher 2">
-            ${v2Text}
-          </button>
-          <button class="btn-card-delete" data-action="delete-single" data-id="${item.id}" title="Hapus nomor ini">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="btn-card-delete" data-action="delete-single" data-id="${item.id}" title="Hapus nomor ini" aria-label="Hapus nomor">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
             </svg>
           </button>
+        </div>
+
+        <div class="phone-card-bottom">
+          <div class="phone-status-meta">
+            ${statusBadge}
+          </div>
+          <div class="phone-card-actions">
+            <button class="voucher-btn ${v1Class}" data-action="toggle-v" data-v="1" data-id="${item.id}" title="Klik untuk ubah status Voucher 1">
+              ${v1Text}
+            </button>
+            <button class="voucher-btn ${v2Class}" data-action="toggle-v" data-v="2" data-id="${item.id}" title="Klik untuk ubah status Voucher 2">
+              ${v2Text}
+            </button>
+          </div>
         </div>
       `;
 
@@ -319,10 +323,12 @@ export class PhoneUI {
       insertStrip.className = 'card-insert-strip';
       insertStrip.innerHTML = `
         <button class="btn-insert-inline" data-action="insert-header" data-after-id="${item.id}" title="Sisipkan Judul di bawah nomor ini">
-          <span>+ Judul</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Judul</span>
         </button>
         <button class="btn-insert-inline" data-action="insert-subheader" data-after-id="${item.id}" title="Sisipkan Sub Judul di bawah nomor ini">
-          <span>+ Sub Judul</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Sub Judul</span>
         </button>
       `;
       fragment.appendChild(insertStrip);
